@@ -1,10 +1,10 @@
-#include "stm_cas.h"
+#include "htm_cas.h"
 #include <iostream>
 
 int main() {
     unsigned int var = 1;
     unsigned int to_cmp = 1;
-    if (stm_compare_and_swap(&var, &to_cmp,(unsigned int)5)) {
+    if (htm_compare_and_swap(&var, &to_cmp,(unsigned int)5)) {
         std::cout << "Success: " << var << std::endl;
     } else {
         std::cout << "Failed: " << var << std::endl;
@@ -14,7 +14,7 @@ int main() {
     int failures = 0;
     int successes = 0;
     for (int i = 0; i < 100; i++) {
-        if (stm_compare_and_swap(&test_var, &to_cmp, (unsigned int) 1)) {
+        if (htm_compare_and_swap(&test_var, &to_cmp, (unsigned int) 1)) {
             successes++;
         } else {
             failures ++;
