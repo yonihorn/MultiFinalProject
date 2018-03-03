@@ -1,2 +1,3 @@
-test_comp:
-	g++ test/test.cpp -mrtm -o test.bin
+all:
+	g++ stm_cas.h -mrtm -o stm_cas.bin
+	g++ example.cpp -mrtm -o example.bin
