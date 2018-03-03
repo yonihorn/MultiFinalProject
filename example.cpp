@@ -11,10 +11,16 @@ int main() {
     }
 
     unsigned int test_var = 1;
+    unsigned int wrong_to_cmp = 2;
     int failures = 0;
     int successes = 0;
     for (int i = 0; i < 100; i++) {
         if (htm_compare_and_swap(&test_var, &to_cmp, (unsigned int) 1)) {
+            successes++;
+        } else {
+            failures ++;
+        }
+        if (!htm_compare_and_swap(&test_var, &wrong_to_cmp, (unsigned int) 1)) {
             successes++;
         } else {
             failures ++;
