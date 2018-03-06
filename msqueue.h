@@ -3,6 +3,7 @@
 // T must be default-constructable  and movable?
 
 #include "htm_cas.h"
+#include <atomic>
 
 
 template<typename T>
@@ -107,6 +108,94 @@ public:
 private:
     CountedPtr m_head;
     CountedPtr m_tail;
+
+};
+
+
+template<typename T>
+class STD_CAS_MSQueue : MSQueue<T> {
+public:
+
+    class QueueNode;
+    using QueueNodeAtomicPtr = std::atomic<QueueNode*>;
+
+    struct CountedPtr {
+        QueueNode* ptr;
+        //unsigned int count;
+        CountedPtr() : ptr(nullptr) {};
+
+        bool operator==(const CountedPtr& rhs) { return ptr == rhs.ptr;}
+    };
+
+    class QueueNode {
+    public:
+        T value;
+        QueueNodeAtomicPtr next;
+        bool sentinel;
+        QueueNode(T value_) : value(value_), sentinel(false){};
+        QueueNode() : sentinel(true) {};
+    };
+
+
+    STD_CAS_MSQueue() {
+        QueueNode* newNode = new QueueNode(); // create sentinel node
+        m_head.store(newNode);
+        m_tail.store(newNode);
+    }
+
+    virtual void enqueue(T value) override {
+        QueueNode* newNode = new QueueNode(value);
+        QueueNode* currentTail;
+        while (true) {
+            currentTail = m_tail.load();
+            QueueNode* next;
+            next = currentTail->next.load();
+            if (currentTail == m_tail.load()) {
+                if (next == nullptr) {
+                    if (std::atomic_compare_exchange_strong(&currentTail->next, &next, newNode)) {
+                        break;
+                    }
+                } else {
+                    std::atomic_compare_exchange_strong(&m_tail, &currentTail, next);
+                }
+            }
+        }
+        std::atomic_compare_exchange_strong(&m_tail, &currentTail, newNode);
+    }
+
+    virtual bool dequeue(T* outValue) {
+        while (true) {
+            QueueNode* currentHead = m_head.load();
+            QueueNode* currentTail = m_tail.load();
+            QueueNode* next = currentHead->next.load();
+            if (currentHead == m_head) {
+                if (currentHead == currentTail) {
+                    // queue is either empty or tail is falling behind
+                    if (next == nullptr) {
+                        // queue is empty
+                        return false;
+                    } else {
+                        // tail is falling behind, try to swing it
+                        std::atomic_compare_exchange_strong(&m_tail, &currentTail, next);
+                    }
+                } else {
+                    // queue is not empty and tail is fine
+                    // read the value
+                    *outValue = next->value;
+                    if (std::atomic_compare_exchange_strong(&m_head, &currentHead, next)) {
+                        // great success
+                        break;
+                    }
+                }
+            }
+        }
+        //free(head.ptr); // freeing here is not really safe?
+        return true;
+    }
+
+private:
+    QueueNodeAtomicPtr m_head;
+    QueueNodeAtomicPtr m_tail;
 
 };
 
