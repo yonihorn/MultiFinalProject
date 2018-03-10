@@ -63,7 +63,7 @@ void test_cas_failure_performance(bool(*cas_function)(u_int), u_int threads_numb
         {
             n += cas_tries % threads_number;
         }
-        threads.push_back(thread(call_htm_cas_n_times, n));
+        threads.push_back(thread(cas_function, n));
     }
     // wait for all threads to finish
     for (auto& t : threads)
