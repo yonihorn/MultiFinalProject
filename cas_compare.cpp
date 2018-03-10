@@ -10,17 +10,18 @@
 using namespace std;
 typedef unsigned int u_int;
 
+u_int htm_var = 1;
+u_int htm_different_var = 2;
+u_int htm_desired = 100;
 /*
 Call htm cas n times, knowing it is supposed to fail as the expected value is difference from out object.
 */
 bool call_htm_cas_n_times(u_int n)
 {
-    u_int var = 1;
-    u_int different_var = 2;
     for (u_int i = 0; i < n; i++)
     {
         // CAS does not supposed to be success (as we compare two different values)
-        if (htm_compare_and_swap(&var, &different_var, (u_int)100))
+        if (htm_compare_and_swap(&htm_var, &htm_different_var, htm_desired))
         {
             std::cout << "cas failed!" << std::endl;
             return false;
@@ -32,15 +33,15 @@ bool call_htm_cas_n_times(u_int n)
 /*
 Call std cas n times, knowing it is supposed to fail as the expected value is difference from out object.
 */
+std::atomic<u_int> std_var(1);
+u_int std_different_var = 2;
+u_int std_desired = 10;
 bool call_std_cas_n_times(u_int n)
 {
-    std::atomic<u_int> var(1);
-    u_int different_var = 2;
-    u_int desired = 10;
     for (u_int i = 0; i < n; i++)
     {
         // CAS does not supposed to be success (as we compare two different values)
-        if (std::atomic_compare_exchange_strong(&var, &different_var, desired))
+        if (std::atomic_compare_exchange_strong(&std_var, &std_different_var, std_desired))
         {
             std::cout << "cas failed!" << std::endl;
             return false;
@@ -81,7 +82,7 @@ int main(int argc, char* argv[])
     // number of command line parameters should be 3
     if (argc != 3)
     {
-        std::cerr << "expected 3 paramerts" << std::endl;
+        std::cerr << "expected 3 paramerts";
         return -1;
     }
 
