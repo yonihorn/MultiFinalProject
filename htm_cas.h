@@ -2,7 +2,7 @@
 #include <cstring>
 
 template <class T> 
-bool htm_compare_and_swap(T* obj, T* expected, T  desired) {
+bool htm_compare_and_swap(T* obj, T* expected, T desired) {
     unsigned status;
     if (status = _xbegin() == _XBEGIN_STARTED) {
         if (std::memcmp(obj, expected, sizeof(T)) == 0) {
@@ -12,8 +12,7 @@ bool htm_compare_and_swap(T* obj, T* expected, T  desired) {
         } else {
             _xend();
         }
-        return false;
-    } else {
-        return false;
     }
+    
+    return false;
 }
