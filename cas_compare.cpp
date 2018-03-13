@@ -23,7 +23,7 @@ bool call_htm_cas_n_times(u_int n)
         // CAS does not supposed to be success (as we compare two different values)
         if (htm_compare_and_swap(&htm_var, &htm_different_var, htm_desired))
         {
-            std::cout << "cas failed!" << std::endl;
+            std::cout << "cas succeed. But is should Fail! htm_var: " << htm_var << " htm_different: " << htm_different_var << std::endl;
             return false;
         }
     }
@@ -33,19 +33,21 @@ bool call_htm_cas_n_times(u_int n)
 /*
 Call std cas n times, knowing it is supposed to fail as the expected value is difference from out object.
 */
+
 std::atomic<u_int> std_var(1);
-u_int std_different_var = 2;
 u_int std_desired = 10;
 bool call_std_cas_n_times(u_int n)
 {
+    u_int std_different_var = 5;
     for (u_int i = 0; i < n; i++)
     {
         // CAS does not supposed to be success (as we compare two different values)
         if (std::atomic_compare_exchange_strong(&std_var, &std_different_var, std_desired))
         {
-            std::cout << "cas failed!" << std::endl;
+            std::cout << "cas succeed. But is should Fail! std_var: " << std_var << " std_different: " << std_different_var << std::endl;
             return false;
         }
+        std_different_var = 5;
     }
     return true;
 }

@@ -32,4 +32,5 @@ inline bool htm_compare_and_swap<u_int>(u_int* obj, u_int* expected, u_int desir
             }
         }
     }
+    return false;
 }
