@@ -4,24 +4,24 @@ template <typename T>
 struct node_t;
 
 template <typename T>
-struct poitner_t
+struct pointer_t
 {
-    poitner_t(node_t<T>* p_node = nullptr, bool deleted = false, uint tag = 0 ) : 
+    pointer_t(node_t<T>* p_node = nullptr, bool deleted = false, unsigned int tag = 0 ) : 
     pointer(p_node),
     deleted(deleted),
     tag(tag) {}
 
     node_t<T>* pointer;
     bool deleted;
-    uint tag;
-}
+    unsigned int tag;
+};
 
 template <typename T>
 struct node_t
 {
     T value;
-    poitner_t next;
-}
+    pointer_t<T> next;
+};
 
 template <typename T>
 class BasketsQueue
@@ -29,11 +29,13 @@ class BasketsQueue
     public:
         BasketsQueue()
         {
-
-        }
+            auto node = new node_t<T>();
+            tail = pointer_t<T>(node);
+            head = pointer_t<T>(node);
+		};
     
     private:
-        poitner_t tail;
-        poitner_t head;
+		pointer_t<T> tail;
+		pointer_t<T> head;
     
-}
+};
