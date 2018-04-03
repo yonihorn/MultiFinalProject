@@ -28,8 +28,8 @@ template <typename T>
 class BasketsQueue
 {
 public:
-
-    using pointer_t_atomic = std::atomic<pointer_t>;
+    template<typename T>
+    using pointer_t_atomic = std::atomic<pointer_t<T>>;
 
     BasketsQueue()
     {
@@ -59,9 +59,9 @@ public:
                         next = next.pointer->next;
                     }
                     pointer_t* new_tail = pointer(next.pointer, 0, tail.tag + 1);
-                    std::atomic_compare_exchange_strong(&b_tail, &tail, *new_tail));
-                    }
+                    std::atomic_compare_exchange_strong(&b_tail, &tail, *new_tail);
                 }
+            }
             else
             {
                 int hops = 0;
@@ -100,10 +100,15 @@ public:
         }
     }
 
-
-
 private:
     pointer_t_atomic<T> b_tail;
     pointer_t_atomic<T> b_head;
-
+    
 };
+
+void main()
+{
+    BasketsQueue<int> b;
+
+
+}
