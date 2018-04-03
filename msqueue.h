@@ -168,7 +168,7 @@ public:
             QueueNode* currentHead = m_head.load();
             QueueNode* currentTail = m_tail.load();
             QueueNode* next = currentHead->next.load();
-            if (currentHead == m_head) {
+            if (currentHead == m_head.load()) {
                 if (currentHead == currentTail) {
                     // queue is either empty or tail is falling behind
                     if (next == nullptr) {
