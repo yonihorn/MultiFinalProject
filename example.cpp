@@ -1,4 +1,4 @@
-#include "htm_cas.h"
+#include "msqueue.h"
 #include <iostream>
 
 int main() {
@@ -27,4 +27,42 @@ int main() {
         }
     }
     std::cout << "Success: " << successes << std::endl << "Failures: " << failures << std::endl;
+
+
+    {
+        HTM_CAS_MSQueue<unsigned int> queue;
+        queue.enqueue(1);
+        queue.enqueue(2);
+        queue.enqueue(3);
+        unsigned int outValue = 0;
+        queue.dequeue(&outValue);
+        std::cout << outValue << std::endl;
+        if (outValue != 1) {
+            std::cerr << "outValue != 1" << std::endl;
+        }
+        queue.dequeue(&outValue);
+        std::cout << outValue << std::endl;
+        if (outValue != 2) {
+            std::cerr << "outValue != 1" << std::endl;
+        }
+    }
+
+    {
+        STD_CAS_MSQueue<unsigned int> queue;
+        queue.enqueue(1);
+        queue.enqueue(2);
+        queue.enqueue(3);
+        unsigned int outValue = 0;
+        queue.dequeue(&outValue);
+        std::cout << outValue << std::endl;
+        if (outValue != 1) {
+            std::cerr << "outValue != 1" << std::endl;
+        }
+        queue.dequeue(&outValue);
+        std::cout << outValue << std::endl;
+        if (outValue != 2) {
+            std::cerr << "outValue != 1" << std::endl;
+        }
+    }
+
 }

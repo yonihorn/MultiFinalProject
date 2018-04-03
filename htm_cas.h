@@ -2,8 +2,8 @@
 #include <cstring>
 
 template <class T> 
-bool htm_compare_and_swap(T* obj, T* expected, T  desired) {
-    unsigned status;
+inline bool htm_compare_and_swap(T* obj, T* expected, T desired) {
+    unsigned status;    
     if (status = _xbegin() == _XBEGIN_STARTED) {
         if (std::memcmp(obj, expected, sizeof(T)) == 0) {
             std::memcpy(obj, &desired, sizeof(T));
@@ -12,8 +12,22 @@ bool htm_compare_and_swap(T* obj, T* expected, T  desired) {
         } else {
             _xend();
         }
-        return false;
-    } else {
-        return false;
+        
     }
+    return false;
+}
+
+template<>
+inline bool htm_compare_and_swap<u_int>(u_int* obj, u_int* expected, u_int desired) {
+    unsigned status;
+    if (status = _xbegin() == _XBEGIN_STARTED) {
+        if (*obj == *expected) {
+            *obj = desired;
+            _xend();
+            return true;
+        } else {
+            _xend();
+        }
+    }
+    return false;
 }
