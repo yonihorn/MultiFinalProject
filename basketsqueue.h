@@ -64,9 +64,9 @@ class BasketsQueue
 					if (nullptr == next.pointer)
 					{
 						new_node->next = pointer_t<T>(nullptr, 0, tail.tag + 2);
-						if (tail.pointer->next.compare_exchange_strong(next, pointer_t<T>(new_node, 0, tail.tag + 1)))
+						if (tail.pointer->next.compare_exchange_strong(next, pointer_t<T>(new_node, false, tail.tag + 1)))
 						{
-							b_tail.compare_exchange_strong(tail, pointer_t<T>(new_node, 0, tail.tag + 1));
+							b_tail.compare_exchange_strong(tail, pointer_t<T>(new_node, false, tail.tag + 1));
 							return true;
 						}
 						next = tail.pointer->next;
@@ -74,7 +74,7 @@ class BasketsQueue
 						{
 							// backoff_scheme() ??? 
 							new_node->next = next;
-							if (tail.pointer->next.compare_exchange_strong(next, pointer_t<T>(new_node, 0, tail.tag + 1)))
+							if (tail.pointer->next.compare_exchange_strong(next, pointer_t<T>(new_node, false, tail.tag + 1)))
 								return true;
 							next = tail.pointer->next.load();
 						}
@@ -83,7 +83,7 @@ class BasketsQueue
 					{
 						while ((nullptr != next.pointer->next.load().pointer) && (tail == b_tail))
 							next = next.pointer->next;
-						b_tail.compare_exchange_strong(tail, pointer_t<T>(next.pointer, 0, tail.tag + 1));
+						b_tail.compare_exchange_strong(tail, pointer_t<T>(next.pointer, false, tail.tag + 1));
 					}
 				}
 			}
