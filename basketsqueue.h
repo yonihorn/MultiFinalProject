@@ -16,9 +16,13 @@ public:
 		deleted(deleted),
 		tag(tag) {};
 
-    node_t<T>* pointer;
-    bool deleted;
-    unsigned int tag;
+	bool operator==(const pointer_t& other) const
+	{
+		return pointer == other.pointer;
+	}
+    node_t<T>* pointer = nullptr;
+    bool deleted = false;
+    unsigned int tag = 0;
 };
 
 template <typename T>
@@ -52,17 +56,17 @@ class BasketsQueue
 			
 			while (true)
 			{
-				pointer_t<T> tail = this->b_tail;
-				pointer_t<T> next = tail.pointer->next;
+				pointer_t<T>& tail = this->b_tail.load();
+				pointer_t<T>& next = tail.pointer->next.load();
 
 				if (tail == b_tail)
 				{
 					if (nullptr == next.pointer)
 					{
 						new_node->next = pointer_t<T>(nullptr, 0, tail.tag + 2);
-						if (std::atomic_compare_exchange_strong(&tail.pointer->next, &next, pointer_t<T>(new_node, 0, tail.tag + 1)))
+						if (tail.pointer->next.compare_exchange_strong(next, pointer_t<T>(new_node, 0, tail.tag + 1)))
 						{
-							std::atomic_compare_exchange_strong(&b_tail, &tail, pointer_t<T>(new_node, 0, tail.tag + 1));
+							b_tail.compare_exchange_strong(tail, pointer_t<T>(new_node, 0, tail.tag + 1));
 							return true;
 						}
 						next = tail.pointer->next;
@@ -70,16 +74,16 @@ class BasketsQueue
 						{
 							// backoff_scheme() ??? 
 							new_node->next = next;
-							if (std::atomic_compare_exchange_strong(&tail.pointer->next, &next, pointer_t<T>(new_node, 0, tail.tag + 1)))
+							if (tail.pointer->next.compare_exchange_strong(next, pointer_t<T>(new_node, 0, tail.tag + 1)))
 								return true;
-							next = tail.pointer->next;
+							next = tail.pointer->next.load();
 						}
 					}
 					else
 					{
-						while ((nullptr != next.pointer->next.pointer) && (tail == b_tail))
+						while ((nullptr != next.pointer->next.load().pointer) && (tail == b_tail))
 							next = next.pointer->next;
-						std::atomic_compare_exchange_strong(&b_tail, &tail, poiner_t<T>(next.pointer, 0, tail.tag + 1));
+						b_tail.compare_exchange_strong(tail, pointer_t<T>(next.pointer, 0, tail.tag + 1));
 					}
 				}
 			}
