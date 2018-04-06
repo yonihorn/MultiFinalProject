@@ -8,7 +8,7 @@ void thread_callback(int number_of_enqueues)
 {
 	for (int i = 0; i < number_of_enqueues; i++)
 	{
-		g_queue.Enqueue(i);
+		g_queue.enqueue(i);
 	}
 }
 
@@ -16,6 +16,7 @@ int main()
 {
 	int number_of_threads = 4;
 	int number_of_enqueues_per_thread = 10000;
+
 	std::vector<std::future<void>> futures;
 	for (int i = 0; i < number_of_threads; i++)
 	{
@@ -26,7 +27,9 @@ int main()
 	{
 		futures[i].wait();
 	}
-	auto size = g_queue.Size();
+	futures.clear();
+
+	auto size = g_queue.size();
 	if (size != number_of_threads * number_of_enqueues_per_thread)
 	{
 		std::cout << "Invalid number of elements on the queue " << size <<
