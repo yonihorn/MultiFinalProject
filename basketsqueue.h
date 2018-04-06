@@ -88,6 +88,18 @@ class BasketsQueue
 				}
 			}
 		}
+
+		size_t Size() const
+		{
+			size_t number_of_elements = 0;
+			auto& node = b_head.load();
+			while (nullptr != node.pointer->next.load().pointer)
+			{
+				++number_of_elements;
+				node = node.pointer->next.load();
+			}
+			return number_of_elements;
+		}
     
     private:
 		atomic_pointer_t<T> b_tail;
