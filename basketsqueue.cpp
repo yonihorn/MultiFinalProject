@@ -73,6 +73,7 @@ int async_test_enqueue()
 	futures.clear();
 
 	VERIFY_ELSE_RETURN(number_of_threads * number_of_enqueues_per_thread, queue.size(), "size");
+	VERIFY_ELSE_RETURN(number_of_threads * (number_of_enqueues_per_thread - 1) * (number_of_enqueues_per_thread / 2), queue.sum(), "sum");
 
 	return 0;
 }
