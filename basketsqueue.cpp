@@ -16,6 +16,7 @@ void enqueue_dequeue_callback(BasketsQueue<int>* queue, int number_of_enqueues)
 {
 	for (int i = 0; i < number_of_enqueues; i++)
 	{
+		// after each insterion, delete element
 		queue->enqueue(i);
 		queue->dequeue();
 	}
@@ -82,8 +83,8 @@ int async_test_enqueue_dequeue()
 {
 	BasketsQueue<int> queue;
 
-	int number_of_threads = 4;
-	int number_of_enqueues_per_thread = 50;
+	int number_of_threads = 10;
+	int number_of_enqueues_per_thread = 50000;
 
 	std::vector<std::future<void>> futures;
 	for (int i = 0; i < number_of_threads; i++)
@@ -104,6 +105,7 @@ int async_test_enqueue_dequeue()
 
 int main()
 {
+
 	if (0 != basic_enqueue_dequeue_test() ||
 		0 != async_test_enqueue() || 0 != async_test_enqueue_dequeue())
 	{

@@ -73,9 +73,9 @@ public:
     {
         if (std::atomic_compare_exchange_strong(&b_head, &head, pointer_t<T>(new_head.pointer, 0, head.tag + 1)))
         {
-            while (!(head.pointer == new_head.pointer))
+            while (head.pointer != new_head.pointer)
             {
-                pointer_t<T> next = head.pointer->next;
+                pointer_t<T> next = head.pointer->next.load();
                 delete head.pointer;
                 head = next;
                 
@@ -85,25 +85,27 @@ public:
 
     T dequeue()
     {
+		int i = 0;
         while (true)
         {
+			i++;
             pointer_t<T>& head = b_head.load();
             pointer_t<T>& tail = b_tail.load();
             pointer_t<T>& next = head.pointer->next.load();
-            if (tail == b_tail.load())
+            if (head == b_head.load())
             {
                 if (head.pointer == tail.pointer)
                 {
-                    // empty queue. return null
-                    if (next.pointer == NULL)
+                    // empty queue. return nullptr
+                    if (next.pointer == nullptr)
                     {
                         std::cout << "empty!" << std::endl;
                         return NULL;
                     }
                     // if the queue is not empty but the tail wasn't updated yet.
-                    while (next.pointer->next.load().pointer != NULL && b_tail.load() == tail)
+                    while ((next.pointer->next.load().pointer != nullptr) && (b_tail.load() == tail))
                     {
-                        next = next.pointer->next;
+                        next = next.pointer->next.load();
                     }
                     
                     std::atomic_compare_exchange_strong(&b_tail, &tail,
@@ -113,11 +115,11 @@ public:
                 else
                 {
                     int hops = 0;
-                    pointer_t<T> iter = b_head.load();
-                    while (next.deleted && iter.pointer != tail.pointer && b_head.load() == head)
+					pointer_t<T> iter = head;
+                    while ((next.deleted && iter.pointer != tail.pointer) && (b_head.load() == head))
                     {
                         iter = next;
-                        next = iter.pointer->next;
+                        next = iter.pointer->next.load();
                         hops++;
                     }
                     if (!(b_head.load() == head))
@@ -137,6 +139,7 @@ public:
                             if (hops >= MAX_HOPS)
                             {
                                 free_chain(head, next);
+
                             }
                             return value;
                         }
@@ -157,17 +160,17 @@ public:
 			pointer_t<T>& tail = this->b_tail.load();
 			pointer_t<T>& next = tail.pointer->next.load();
 
-			if (tail == b_tail)
+			if (tail == b_tail.load())
 			{
 				if (nullptr == next.pointer)
 				{
-					new_node->next = pointer_t<T>(nullptr, 0, tail.tag + 2);
+					new_node->next = pointer_t<T>(nullptr, false, tail.tag + 2);
 					if (tail.pointer->next.compare_exchange_strong(next, pointer_t<T>(new_node, false, tail.tag + 1)))
 					{
 						b_tail.compare_exchange_strong(tail, pointer_t<T>(new_node, false, tail.tag + 1));
 						return true;
 					}
-					next = tail.pointer->next;
+					next = tail.pointer->next.load();
 					while ((next.tag == tail.tag + 1) && (false == next.deleted))
 					{
 						// backoff_scheme() ??? 
@@ -179,7 +182,7 @@ public:
 				}
 				else
 				{
-					while ((nullptr != next.pointer->next.load().pointer) && (tail == b_tail))
+					while ((nullptr != next.pointer->next.load().pointer) && (tail == b_tail.load()))
 						next = next.pointer->next;
 					b_tail.compare_exchange_strong(tail, pointer_t<T>(next.pointer, false, tail.tag + 1));
 				}
