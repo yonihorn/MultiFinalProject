@@ -148,17 +148,7 @@ public:
 		}
 	}
 
-    int sum()
-    {
-        pointer_t<T> iter = b_head.load();
-        while (next.deleted && iter.pointer != tail.pointer && b_head.load() == head)
-        {
-            iter = next;
-            next = iter.pointer->next;
-            hops++;
-        }
-    }
-    bool Enqueue(T value)
+    bool enqueue(T value)
     {
         node_t<T>* new_node = new node_t<T>(value);
 
