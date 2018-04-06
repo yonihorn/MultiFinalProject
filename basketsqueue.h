@@ -52,7 +52,23 @@ public:
         b_head = pointer_t<T>(node);
     }
 
+    // Guaranteed to be called without concurrent operations
+    T sum()
+    {
+        T sum = T();
+        pointer_t<T>& iter = b_head.load().pointer->next.load();
+        while (iter.pointer != nullptr)
+        {
+            if (!iter.deleted)
+            {
+                sum += iter.pointer->value;
+            }
+            iter = iter.pointer->next.load();
 
+        }
+        return sum;
+        
+    }
     void free_chain(pointer_t<T>& head, pointer_t<T> new_head)
     {
         if (std::atomic_compare_exchange_strong(&b_head, &head, pointer_t<T>(new_head.pointer, 0, head.tag + 1)))
@@ -78,15 +94,18 @@ public:
             {
                 if (head.pointer == tail.pointer)
                 {
+                    // empty queue. return null
                     if (next.pointer == NULL)
                     {
                         std::cout << "empty!" << std::endl;
                         return NULL;
                     }
+                    // if the queue is not empty but the tail wasn't updated yet.
                     while (next.pointer->next.load().pointer != NULL && b_tail.load() == tail)
                     {
                         next = next.pointer->next;
                     }
+                    
                     std::atomic_compare_exchange_strong(&b_tail, &tail,
                         pointer_t<T>(next.pointer, 0, tail.tag + 1));
                 }
@@ -119,7 +138,6 @@ public:
                             {
                                 free_chain(head, next);
                             }
-
                             return value;
                         }
                         // backoff scheme
@@ -130,16 +148,6 @@ public:
         }
     }
 
-    int sum()
-    {
-        pointer_t<T> iter = b_head.load();
-        while (next.deleted && iter.pointer != tail.pointer && b_head.load() == head)
-        {
-            iter = next;
-            next = iter.pointer->next;
-            hops++;
-        }
-    }
     bool Enqueue(T value)
     {
         node_t<T>* new_node = new node_t<T>(value);
