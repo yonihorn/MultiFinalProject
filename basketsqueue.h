@@ -52,96 +52,115 @@ public:
 		b_head = pointer_t<T>(node);
 	}
 
+    // Guaranteed to be called without concurrent operations
+    T sum()
+    {
+        T sum = T();
+        pointer_t<T>& iter = b_head.load().pointer->next.load();
+        while (iter.pointer != nullptr)
+        {
+            if (!iter.deleted)
+            {
+                sum += iter.pointer->value;
+            }
+            iter = iter.pointer->next.load();
 
-	void free_chain(pointer_t<T>& head, pointer_t<T> new_head)
-	{
-		if (std::atomic_compare_exchange_strong(&b_head, &head, pointer_t<T>(new_head.pointer, 0, head.tag + 1)))
-		{
-			while (!(head.pointer == new_head.pointer))
-			{
-				pointer_t<T> next = head.pointer->next;
-				delete head.pointer;
-				head = next;
+        }
+        return sum;
+        
+    }
+    void free_chain(pointer_t<T>& head, pointer_t<T> new_head)
+    {
+        if (std::atomic_compare_exchange_strong(&b_head, &head, pointer_t<T>(new_head.pointer, 0, head.tag + 1)))
+        {
+            while (!(head.pointer == new_head.pointer))
+            {
+                pointer_t<T> next = head.pointer->next;
+                delete head.pointer;
+                head = next;
+                
+            }
+        }
+    }
 
+    T dequeue()
+    {
+        while (true)
+        {
+            pointer_t<T>& head = b_head.load();
+            pointer_t<T>& tail = b_tail.load();
+            pointer_t<T>& next = head.pointer->next.load();
+            if (tail == b_tail.load())
+            {
+                if (head.pointer == tail.pointer)
+                {
+                    // empty queue. return null
+                    if (next.pointer == NULL)
+                    {
+                        std::cout << "empty!" << std::endl;
+                        return NULL;
+                    }
+                    // if the queue is not empty but the tail wasn't updated yet.
+                    while (next.pointer->next.load().pointer != NULL && b_tail.load() == tail)
+                    {
+                        next = next.pointer->next;
+                    }
+                    
+                    std::atomic_compare_exchange_strong(&b_tail, &tail,
+                        pointer_t<T>(next.pointer, 0, tail.tag + 1));
+                }
+
+                else
+                {
+                    int hops = 0;
+                    pointer_t<T> iter = b_head.load();
+                    while (next.deleted && iter.pointer != tail.pointer && b_head.load() == head)
+                    {
+                        iter = next;
+                        next = iter.pointer->next;
+                        hops++;
+                    }
+                    if (!(b_head.load() == head))
+                    {
+                        continue;
+                    }
+                    else if (iter.pointer == tail.pointer)
+                    {
+                        free_chain(head, iter);
+                    }
+                    else
+                    {
+                        T value = next.pointer->value;
+                        if (std::atomic_compare_exchange_strong(&iter.pointer->next, &next,
+                            pointer_t<T>(next.pointer, 1, tail.tag + 1)))
+                        {
+                            if (hops >= MAX_HOPS)
+                            {
+                                free_chain(head, next);
+                            }
+                            return value;
+                        }
+                        // backoff scheme
+                    }
+
+				}
 			}
 		}
 	}
 
-	T dequeue()
-	{
-		while (true)
-		{
-			pointer_t<T>& head = b_head.load();
-			pointer_t<T>& tail = b_tail.load();
-			pointer_t<T>& next = head.pointer->next.load();
-			if (tail == b_tail.load())
-			{
-				if (head.pointer == tail.pointer)
-				{
-					if (next.pointer == NULL)
-					{
-						throw std::exception("the queue is empty");
-					}
-					while (next.pointer->next.load().pointer != NULL && b_tail.load() == tail)
-					{
-						next = next.pointer->next;
-					}
-					std::atomic_compare_exchange_strong(&b_tail, &tail,
-						pointer_t<T>(next.pointer, 0, tail.tag + 1));
-				}
-				else
-				{
-					int hops = 0;
-					pointer_t<T> iter = b_head.load();
-					while (next.deleted && iter.pointer != tail.pointer && b_head.load() == head)
-					{
-						iter = next;
-						next = iter.pointer->next;
-						hops++;
-					}
-					if (!(b_head.load() == head))
-					{
-						continue;
-					}
-					else if (iter.pointer == tail.pointer)
-					{
-						free_chain(head, iter);
-					}
-					else
-					{
-						T value = next.pointer->value;
-						if (std::atomic_compare_exchange_strong(&iter.pointer->next, &next,
-							pointer_t<T>(next.pointer, 1, tail.tag + 1)))
-						{
-							if (hops >= MAX_HOPS)
-							{
-								free_chain(head, next);
-							}
-
-							return value;
-						}
-						// backoff scheme
-					}
-
-				}
-			}
-		}
-	}
-
-	int sum()
-	{
-		pointer_t<T> iter = b_head.load();
-		while (next.deleted && iter.pointer != tail.pointer && b_head.load() == head)
-		{
-			iter = next;
-			next = iter.pointer->next;
-			hops++;
-		}
-	}
-
-	bool enqueue(T value)
-	{
-		node_t<T>* new_node = new node_t<T>(value);
+    int sum()
+    {
+        pointer_t<T> iter = b_head.load();
+        while (next.deleted && iter.pointer != tail.pointer && b_head.load() == head)
+        {
+            iter = next;
+            next = iter.pointer->next;
+            hops++;
+        }
+    }
+    bool Enqueue(T value)
+    {
+        node_t<T>* new_node = new node_t<T>(value);
 
 		while (true)
 		{
