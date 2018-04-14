@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <random>
 #include <ctime>
-#include "msqueue.h"
+#include "msqueue_trace.h"
 #include <cstdlib>
 #include <vector>
 
@@ -15,7 +15,7 @@ class OperationsList {
     private:
     class Operation {
         public:
-        virtual bool performOperation(MSQueue<u_int>* queue);
+        virtual bool performOperation(MSQueue<u_int>* queue, u_int tid);
     };
 
     class InsertionOperation {
@@ -23,17 +23,17 @@ class OperationsList {
         u_int m_value;
         public:
         InsertionOperation(u_int value) : m_value(value) {};
-        virtual bool performOperation(MSQueue<u_int>* queue) {
-            queue->enqueue(m_value);
+        virtual bool performOperation(MSQueue<u_int>* queue, u_int tid) {
+            queue->enqueue(m_value, tid);
             return true;
         }
     };
 
     class DeletionOperation {
         public:
-        virtual bool performOperation(MSQueue<u_int>* queue) {
+        virtual bool performOperation(MSQueue<u_int>* queue, u_int tid) {
             u_int outValue;
-            return queue->dequeue(&outValue);
+            return queue->dequeue(&outValue, tid);
         };
     };
 
@@ -61,35 +61,36 @@ class OperationsList {
         }
     };
 
-    bool operateNextOperation(MSQueue<u_int>* queue) {
-        return m_operations[m_operations.size() - operationsLeft--]->performOperation(queue);
+    bool operateNextOperation(MSQueue<u_int>* queue, u_int tid) {
+        return m_operations[m_operations.size() - operationsLeft--]->performOperation(queue, tid);
     };
 
 };
 
 
-void queueOperationsWorker(MSQueue<u_int>* queue, OperationsList* opsList) {
+void queueOperationsWorker(MSQueue<u_int>* queue, OperationsList* opsList, u_int tid) {
     while(opsList->operationsLeft) {
         //std::cout << "operating" << std::endl;
-        opsList->operateNextOperation(queue);
+        opsList->operateNextOperation(queue, tid);
     }
 }
 
 bool run(int nthreads, int ntrials, int noperations, double ratio, bool prefill, bool HTM_CAS) {
     std::vector<std::thread> threads;
-    for (u_int i = 0; i<ntrials; i++) {
+    std::vector<u_int> failures_counters(nthreads, 0);
+    for (u_int j = 0; j<ntrials; j++) {
         MSQueue<u_int>* queue;
         if (HTM_CAS) {
-            queue = reinterpret_cast<MSQueue<u_int>*>(new HTM_CAS_MSQueue<u_int>());
+            queue = reinterpret_cast<MSQueue<u_int>*>(new HTM_CAS_MSQueue<u_int>(failures_counters.data()));
         } else {
-            queue = reinterpret_cast<MSQueue<u_int>*>(new STD_CAS_MSQueue<u_int>());
+            queue = reinterpret_cast<MSQueue<u_int>*>(new STD_CAS_MSQueue<u_int>(failures_counters.data()));
         }
         std::vector<OperationsList*> opsLists;
         for (u_int i = 0; i< nthreads; i++) {
             opsLists.push_back(new OperationsList(noperations, ratio));
         }
         for (u_int i = 0; i < nthreads; i++) {
-            threads.push_back(std::thread(queueOperationsWorker, queue, opsLists[i]));
+            threads.push_back(std::thread(queueOperationsWorker, queue, opsLists[i], i));
         }
     }
     // wait for all threads to finish
@@ -97,6 +98,12 @@ bool run(int nthreads, int ntrials, int noperations, double ratio, bool prefill,
     {
         t.join();
     }
+    u_int total_failures = 0;
+    for (u_int& f : failures_counters) {
+        std::cout << f << ", ";
+        total_failures += f;
+    }
+    std::cout << "total: " << total_failures << std::endl;
 };
 
 int main(int argc, char** argv) {
@@ -113,14 +120,14 @@ int main(int argc, char** argv) {
     double ratio = atof(argv[4]);
 
     auto t1 = std::chrono::high_resolution_clock::now();
-    run(nthreads, ntrials, noperations, ratio, true, true);
+    run(nthreads, ntrials, noperations, ratio, true, false);
     auto t2 = std::chrono::high_resolution_clock::now();
     auto microseconds_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    std::cout << "htm cas: " << microseconds_elapsed.count() << std::endl;
+    std::cout << "std cas: " << microseconds_elapsed.count() << std::endl;
 
     t1 = std::chrono::high_resolution_clock::now();
-    run(nthreads, ntrials, noperations, ratio, true, false);
+    run(nthreads, ntrials, noperations, ratio, true, true);
     t2 = std::chrono::high_resolution_clock::now();
     microseconds_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    std::cout << "std cas: " << microseconds_elapsed.count() << std::endl;
+    std::cout << "htm cas: " << microseconds_elapsed.count() << std::endl;
 };
