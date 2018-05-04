@@ -12,6 +12,15 @@ void enqueue_callback(BasketsQueue<int>* queue, int number_of_enqueues)
 	}
 }
 
+void dequeue_callback(BasketsQueue<int>* queue, int number_of_enqueues)
+{
+	for (int i = 0; i < number_of_enqueues; i++)
+	{
+		queue->dequeue();
+	}
+}
+
+
 void enqueue_dequeue_callback(BasketsQueue<int>* queue, int number_of_enqueues)
 {
 	for (int i = 0; i < number_of_enqueues; i++)
@@ -59,7 +68,7 @@ int async_test_enqueue()
 	BasketsQueue<int> queue;
 
 	int number_of_threads = 4;
-	int number_of_enqueues_per_thread = 10000;
+	int number_of_enqueues_per_thread = 50000;
 
 	std::vector<std::future<void>> futures;
 	for (int i = 0; i < number_of_threads; i++)
@@ -78,13 +87,40 @@ int async_test_enqueue()
 
 	return 0;
 }
+int async_test_dequeue()
+{
+	BasketsQueue<int> queue;
+	int number_of_dequeues_per_thread = 5000;
+	int number_of_threads = 1;
+	
+	// Preparing the queue
+	for (int i = 0; i < number_of_threads * number_of_dequeues_per_thread; i++)
+	{
+		queue.enqueue(i);
+	}
 
+	std::vector<std::future<void>> futures;
+	for (int i = 0; i < number_of_threads; i++)
+	{
+		futures.emplace_back(std::async(dequeue_callback, &queue, number_of_dequeues_per_thread));
+	}
+
+	for (int i = 0; i < futures.size(); i++)
+	{
+		futures[i].wait();
+	}
+	futures.clear();
+
+	VERIFY_ELSE_RETURN(0, queue.size(), "size");
+
+	return 0;
+}
 int async_test_enqueue_dequeue()
 {
 	BasketsQueue<int> queue;
 
-	int number_of_threads = 10;
-	int number_of_enqueues_per_thread = 50000;
+	int number_of_threads = 4;
+	int number_of_enqueues_per_thread = 5000;
 
 	std::vector<std::future<void>> futures;
 	for (int i = 0; i < number_of_threads; i++)
@@ -105,9 +141,11 @@ int async_test_enqueue_dequeue()
 
 int main()
 {
-
-	if (0 != basic_enqueue_dequeue_test() ||
-		0 != async_test_enqueue() || 0 != async_test_enqueue_dequeue())
+	if (//0 != basic_enqueue_dequeue_test() ||
+		//0 != async_test_enqueue()// || 
+		0 != async_test_dequeue() //||
+		//0 != async_test_enqueue_dequeue()
+		)
 	{
 		std::cout << "Some tests failed " << std::endl;
 		return 1;
