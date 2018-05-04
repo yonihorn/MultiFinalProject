@@ -69,14 +69,15 @@ public:
         return sum;
         
     }
-    void free_chain(pointer_t<T>& head, pointer_t<T> new_head)
+    void free_chain(pointer_t<T> head, pointer_t<T> new_head)
     {
         if (std::atomic_compare_exchange_strong(&b_head, &head, pointer_t<T>(new_head.pointer, 0, head.tag + 1)))
         {
             while (head.pointer != new_head.pointer)
             {
-                pointer_t<T> next = head.pointer->next.load();
+				pointer_t<T> next = (head.pointer->next.load());
                 delete head.pointer;
+				head.pointer = nullptr;
                 head = next;
                 
             }
@@ -91,7 +92,7 @@ public:
 			i++;
             pointer_t<T>& head = b_head.load();
             pointer_t<T>& tail = b_tail.load();
-            pointer_t<T>& next = head.pointer->next.load();
+			pointer_t<T>& next = head.pointer->next.load();
             if (head == b_head.load())
             {
                 if (head.pointer == tail.pointer)
