@@ -2,6 +2,9 @@
 
 #include <atomic>
 #include <iostream>
+#include "htm_cas.h"
+
+
 #define MAX_HOPS (3)
 typedef unsigned int u_int;
 
@@ -163,7 +166,7 @@ public:
 					}
 					else if (iter.pointer == tail.pointer)
 					{
-						free_chain(head, iter);
+						free_chain(head, iter, tid);
 					}
 					else
 					{
@@ -173,7 +176,7 @@ public:
 						{
 							if (hops >= MAX_HOPS)
 							{
-								free_chain(head, next);
+								free_chain(head, next, tid);
 							}
 							return value;
 						}
@@ -335,7 +338,7 @@ public:
 	}
 
 
-	void free_chain(pointer_t_std<T> head, pointer_t_std<T> new_head)
+	void free_chain(pointer_t_std<T> head, pointer_t_std<T> new_head, u_int tid)
 	{
 		if (b_head.compare_exchange_strong(head, pointer_t_std<T>(new_head.pointer, 0, head.tag + 1)))
 		{
@@ -349,7 +352,7 @@ public:
 		}
 		else
 		{
-			m_failures_counters[tid]++
+			m_failures_counters[tid]++;
 		}
 	}
 
@@ -397,7 +400,7 @@ public:
 					}
 					else if (iter.pointer == tail.pointer)
 					{
-						free_chain(head, iter);
+						free_chain(head, iter, tid);
 					}
 					else
 					{
@@ -408,7 +411,7 @@ public:
 						{
 							if (hops >= MAX_HOPS)
 							{
-								free_chain(head, next);
+								free_chain(head, next, tid);
 							}
 							return value;
 						}
@@ -445,7 +448,7 @@ public:
 					}
 					else
 					{
-						m_failures_counters[tid]++
+						m_failures_counters[tid]++;
 					}
 					next = tail.pointer->next.load();
 					while ((next.tag == tail.tag + 1) && (false == next.deleted))
@@ -455,7 +458,7 @@ public:
 						if (tail.pointer->next.compare_exchange_strong(next, pointer_t_std<T>(new_node, false, tail.tag + 1)))
 							return true;
 						else
-							m_failures_counters[tid]++
+							m_failures_counters[tid]++;
 						next = tail.pointer->next.load();
 					}
 				}
