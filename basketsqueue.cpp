@@ -18,6 +18,7 @@ void dequeue_callback(BasketsQueue<int>* queue, int number_of_enqueues)
 	{
 		queue->dequeue();
 	}
+
 }
 
 
@@ -91,14 +92,13 @@ int async_test_dequeue()
 {
 	BasketsQueue<int> queue;
 	int number_of_dequeues_per_thread = 5000;
-	int number_of_threads = 1;
+	int number_of_threads = 4;
 	
 	// Preparing the queue
 	for (int i = 0; i < number_of_threads * number_of_dequeues_per_thread; i++)
 	{
 		queue.enqueue(i);
 	}
-
 	std::vector<std::future<void>> futures;
 	for (int i = 0; i < number_of_threads; i++)
 	{
@@ -141,10 +141,10 @@ int async_test_enqueue_dequeue()
 
 int main()
 {
-	if (//0 != basic_enqueue_dequeue_test() ||
-		//0 != async_test_enqueue()// || 
-		0 != async_test_dequeue() //||
-		//0 != async_test_enqueue_dequeue()
+	if (0 != basic_enqueue_dequeue_test() ||
+		0 != async_test_enqueue() || 
+		0 != async_test_dequeue() ||
+		0 != async_test_enqueue_dequeue()
 		)
 	{
 		std::cout << "Some tests failed " << std::endl;
