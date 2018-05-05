@@ -118,7 +118,7 @@ public:
 					// empty queue. return 0
 					if (next.pointer == nullptr)
 					{
-						std::cout << "empty!" << std::endl;
+						//std::cout << "empty!" << std::endl;
 						return T();
 					}
 					// if the queue is not empty but the tail wasn't updated yet.
