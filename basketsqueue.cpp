@@ -1,6 +1,7 @@
 #include "basketsqueue.h"
 #include <future>
 #include <iostream>
+#include <vector>
 
 #define VERIFY_ELSE_RETURN(expected, actual, variable_name) if (actual != expected) { std::cout << variable_name << " should be " << expected << " but instead equals to " << actual << std::endl; return 1; }
 
@@ -37,13 +38,11 @@ int basic_enqueue_dequeue_test()
 {
 	std::cout << "basic_enqueue_dequeue_test in progress.." << std::endl;
 	BasketsQueue<int> queue;
-
 	queue.enqueue(1);
 	queue.enqueue(2);
 	queue.enqueue(3);
 	queue.enqueue(4);
 	queue.enqueue(5);
-
 	VERIFY_ELSE_RETURN(15, queue.sum(), "sum");
 
 	VERIFY_ELSE_RETURN(1, queue.dequeue(), "dequeue");
