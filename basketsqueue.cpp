@@ -75,7 +75,7 @@ int async_test_enqueue(BasketsQueue<int> * queue)
 	std::cout << "async_test_enqueue in progress.." << std::endl;
 
 
-	int number_of_threads = 4;
+	int number_of_threads = 10;
 	int number_of_enqueues_per_thread = 50000;
 
 	std::vector<std::future<void>> futures;
@@ -103,8 +103,8 @@ int async_test_dequeue_half(BasketsQueue<int> * queue)
 {
 	std::cout << "async_test_dequeue_half in progress.." << std::endl;
 
-	int number_of_elements = 5000;
-	int number_of_threads = 4;
+	int number_of_elements = 10000;
+	int number_of_threads = 10;
 	
 	// Preparing the queue
 	for (int i = 0; i < number_of_threads * number_of_elements; i++)
