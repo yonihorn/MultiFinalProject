@@ -9,7 +9,7 @@ template <typename T>
 struct node_t_std;
 
 template <typename T>
-class pointer_t_std
+class alignas(16) pointer_t_std
 {
 public:
 	pointer_t_std() = default;
@@ -37,7 +37,7 @@ template <typename T>
 using atomic_pointer_t_std = std::atomic<pointer_t_std<T>>;
 
 template <typename T>
-struct node_t_std 
+struct alignas(16) node_t_std
 {
 	node_t_std() {};
 	node_t_std(T value) : value(value) {};
