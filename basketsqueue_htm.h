@@ -55,7 +55,7 @@ public:
 	size_t size()
 	{
 		size_t number_of_elements = 0;
-		auto& node = b_head.pointer->next;
+		auto node = b_head.pointer->next;
 		while (nullptr != node.pointer)
 		{
 			if (false == node.deleted)
@@ -71,7 +71,7 @@ public:
 	T sum()
 	{
 		T sum = T();
-		pointer_t_htm<T>& iter = b_head.pointer->next;
+		pointer_t_htm<T> iter = b_head.pointer->next;
 		while (iter.pointer != nullptr)
 		{
 			if (!iter.deleted)
@@ -114,7 +114,7 @@ public:
 					if (next.pointer == nullptr)
 					{
 						std::cout << "empty!" << std::endl;
-						return NULL;
+						return T();
 					}
 					// if the queue is not empty but the tail wasn't updated yet.
 					while ((next.pointer->next.pointer != nullptr) && (b_tail == tail))

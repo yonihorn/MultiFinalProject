@@ -60,7 +60,7 @@ public:
 	T sum()
 	{
 		T sum = T();
-		pointer_t_std<T>& iter = b_head.load().pointer->next.load();
+		pointer_t_std<T> iter = b_head.load().pointer->next.load();
 		while (iter.pointer != nullptr)
 		{
 			if (!iter.deleted)
@@ -76,7 +76,7 @@ public:
 	size_t size()
 	{
 		size_t number_of_elements = 0;
-		auto& node = b_head.load().pointer->next.load();
+		auto node = b_head.load().pointer->next.load();
 		while (nullptr != node.pointer)
 		{
 			if (false == node.deleted)
@@ -119,7 +119,7 @@ public:
 					if (next.pointer == nullptr)
 					{
 						std::cout << "empty!" << std::endl;
-						return NULL;
+						return T();
 					}
 					// if the queue is not empty but the tail wasn't updated yet.
 					while ((next.pointer->next.load().pointer != nullptr) && (b_tail.load() == tail))
