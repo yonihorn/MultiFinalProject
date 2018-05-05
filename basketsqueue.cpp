@@ -254,7 +254,7 @@ int run_tests_for_htm_cas()
 int main()
 {
 	run_tests_for_std_cas();
-	//run_tests_for_htm_cas();
+	run_tests_for_htm_cas();
 	std::cout << "all tests finished";
 	return 0;
 

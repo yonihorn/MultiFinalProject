@@ -4,16 +4,45 @@
 #include "basketsqueue.h"
 #include <iostream>
 
-template <typename T>
-using atomic_pointer_t = std::atomic<pointer_t<T>>;
 
 template <typename T>
-struct node_t_std : node_t<T>
+struct node_t_std;
+
+template <typename T>
+class pointer_t_std
+{
+public:
+	pointer_t_std() = default;
+
+	pointer_t_std(node_t_std<T>* p_node, bool deleted = false, unsigned int tag = 0) :
+		pointer(p_node),
+		deleted(deleted),
+		tag(tag) {};
+
+	bool operator==(const pointer_t_std& other) const
+	{
+		return pointer == other.pointer;
+	}
+	bool operator !=(const pointer_t_std& other) const
+	{
+		return !(*this == other);
+	}
+
+	node_t_std<T>* pointer = nullptr;
+	bool deleted = false;
+	unsigned int tag = 0;
+};
+
+template <typename T>
+using atomic_pointer_t_std = std::atomic<pointer_t_std<T>>;
+
+template <typename T>
+struct node_t_std 
 {
 	node_t_std() {};
 	node_t_std(T value) : value(value) {};
 	T value;
-	atomic_pointer_t<T> next;
+	atomic_pointer_t_std<T> next;
 };
 
 template <typename T>
@@ -22,16 +51,16 @@ class BasketsQueueSTD : public BasketsQueue<T>
 public:
 	BasketsQueueSTD()
 	{
-		auto node = new node_t<T>();
-		b_tail = pointer_t<T>(node);
-		b_head = pointer_t<T>(node);
+		auto node = new node_t_std<T>();
+		b_tail = pointer_t_std<T>(node);
+		b_head = pointer_t_std<T>(node);
 	}
 
 	// Guaranteed to be called without concurrent operations
 	T sum()
 	{
 		T sum = T();
-		pointer_t<T>& iter = b_head.load().pointer->next.load();
+		pointer_t_std<T>& iter = b_head.load().pointer->next.load();
 		while (iter.pointer != nullptr)
 		{
 			if (!iter.deleted)
@@ -60,13 +89,13 @@ public:
 	}
 
 
-	void free_chain(pointer_t<T> head, pointer_t<T> new_head)
+	void free_chain(pointer_t_std<T> head, pointer_t_std<T> new_head)
 	{
-		if (b_head.compare_exchange_strong(head, pointer_t<T>(new_head.pointer, 0, head.tag + 1)))
+		if (b_head.compare_exchange_strong(head, pointer_t_std<T>(new_head.pointer, 0, head.tag + 1)))
 		{
 			while (head.pointer != new_head.pointer)
 			{
-				pointer_t<T> next = head.pointer->next.load();
+				pointer_t_std<T> next = head.pointer->next.load();
 				delete head.pointer;
 				head = next.pointer;
 
@@ -78,9 +107,9 @@ public:
 	{
 		while (true)
 		{
-			pointer_t<T> head = b_head.load();
-			pointer_t<T> tail = b_tail.load();
-			pointer_t<T> next = head.pointer->next.load();
+			pointer_t_std<T> head = b_head.load();
+			pointer_t_std<T> tail = b_tail.load();
+			pointer_t_std<T> next = head.pointer->next.load();
 
 			if (head == b_head.load())
 			{
@@ -98,12 +127,12 @@ public:
 						next = next.pointer->next.load();
 					}
 
-					b_tail.compare_exchange_strong(tail, pointer_t<T>(next.pointer, false, tail.tag + 1));
+					b_tail.compare_exchange_strong(tail, pointer_t_std<T>(next.pointer, false, tail.tag + 1));
 				}
 				else
 				{
 					int hops = 0;
-					pointer_t<T> iter = head;
+					pointer_t_std<T> iter = head;
 					while ((b_head.load() == head) && (next.deleted && iter.pointer != tail.pointer))
 					{
 						iter = next;
@@ -125,7 +154,7 @@ public:
 						T value = next.pointer->value;
 
 						if (iter.pointer->next.compare_exchange_strong(next,
-							pointer_t<T>(next.pointer, true, tail.tag + 1)))
+							pointer_t_std<T>(next.pointer, true, tail.tag + 1)))
 						{
 							if (hops >= MAX_HOPS)
 							{
@@ -143,21 +172,21 @@ public:
 
 	bool enqueue(T value)
 	{
-		node_t<T>* new_node = new node_t<T>(value);
+		node_t_std<T>* new_node = new node_t_std<T>(value);
 
 		while (true)
 		{
-			pointer_t<T> tail = this->b_tail.load();
-			pointer_t<T> next = tail.pointer->next.load();
+			pointer_t_std<T> tail = this->b_tail.load();
+			pointer_t_std<T> next = tail.pointer->next.load();
 
 			if (tail == b_tail.load())
 			{
 				if (nullptr == next.pointer)
 				{
-					new_node->next = pointer_t<T>(nullptr, false, tail.tag + 2);
-					if (tail.pointer->next.compare_exchange_strong(next, pointer_t<T>(new_node, false, tail.tag + 1)))
+					new_node->next = pointer_t_std<T>(nullptr, false, tail.tag + 2);
+					if (tail.pointer->next.compare_exchange_strong(next, pointer_t_std<T>(new_node, false, tail.tag + 1)))
 					{
-						b_tail.compare_exchange_strong(tail, pointer_t<T>(new_node, false, tail.tag + 1));
+						b_tail.compare_exchange_strong(tail, pointer_t_std<T>(new_node, false, tail.tag + 1));
 						return true;
 					}
 					next = tail.pointer->next.load();
@@ -165,7 +194,7 @@ public:
 					{
 						// backoff_scheme() 
 						new_node->next = next;
-						if (tail.pointer->next.compare_exchange_strong(next, pointer_t<T>(new_node, false, tail.tag + 1)))
+						if (tail.pointer->next.compare_exchange_strong(next, pointer_t_std<T>(new_node, false, tail.tag + 1)))
 							return true;
 						next = tail.pointer->next.load();
 					}
@@ -174,13 +203,13 @@ public:
 				{
 					while ((nullptr != next.pointer->next.load().pointer) && (tail == b_tail.load()))
 						next = next.pointer->next;
-					b_tail.compare_exchange_strong(tail, pointer_t<T>(next.pointer, false, tail.tag + 1));
+					b_tail.compare_exchange_strong(tail, pointer_t_std<T>(next.pointer, false, tail.tag + 1));
 				}
 			}
 		}
 	}
 
 private:
-	atomic_pointer_t<T> b_tail;
-	atomic_pointer_t<T> b_head;
+	atomic_pointer_t_std<T> b_tail;
+	atomic_pointer_t_std<T> b_head;
 };

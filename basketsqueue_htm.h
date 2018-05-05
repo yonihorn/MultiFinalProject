@@ -5,23 +5,51 @@
 #include "basketsqueue.h"
 
 template <typename T>
-struct node_t_htm : node_t<T>
+struct node_t_htm;
+
+template <typename T>
+class pointer_t_htm
+{
+public:
+	pointer_t_htm() = default;
+
+	pointer_t_htm(node_t_htm<T> * p_node, bool deleted = false, unsigned int tag = 0) :
+		pointer(p_node),
+		deleted(deleted),
+		tag(tag) {};
+
+	bool operator==(const pointer_t_htm& other) const
+	{
+		return pointer == other.pointer;
+	}
+	bool operator !=(const pointer_t_htm& other) const
+	{
+		return !(*this == other);
+	}
+
+	node_t_htm<T>* pointer = nullptr;
+	bool deleted = false;
+	unsigned int tag = 0;
+};
+
+template <typename T>
+struct node_t_htm
 {
 	node_t_htm() {};
 	node_t_htm(T value) : value(value) {};
 	T value;
-	pointer_t<T> next;
+	pointer_t_htm<T> next;
 };
 
 template <typename T>
-class BasketsQueueHTM :  public BasketsQueue<T>
+class BasketsQueueHTM : public BasketsQueue<T>
 {
 public:
 	BasketsQueueHTM()
 	{
 		auto node = new node_t_htm<T>();
-		b_tail = pointer_t<T>(node);
-		b_head = pointer_t<T>(node);
+		b_tail = pointer_t_htm<T>(node);
+		b_head = pointer_t_htm<T>(node);
 	}
 
 	size_t size()
@@ -43,7 +71,7 @@ public:
 	T sum()
 	{
 		T sum = T();
-		pointer_t<T>& iter = b_head.pointer->next;
+		pointer_t_htm<T>& iter = b_head.pointer->next;
 		while (iter.pointer != nullptr)
 		{
 			if (!iter.deleted)
@@ -56,13 +84,13 @@ public:
 		return sum;
 
 	}
-	void free_chain(pointer_t<T> head, pointer_t<T> new_head)
+	void free_chain(pointer_t_htm<T> head, pointer_t_htm<T> new_head)
 	{
-		if (htm_compare_and_swap<pointer_t<T>>(&b_head, &head, pointer_t<T>(new_head.pointer, 0, head.tag + 1)))
+		if (htm_compare_and_swap<pointer_t_htm<T>>(&b_head, &head, pointer_t_htm<T>(new_head.pointer, 0, head.tag + 1)))
 		{
 			while (head.pointer != new_head.pointer)
 			{
-				pointer_t<T> next = head.pointer->next;
+				pointer_t_htm<T> next = head.pointer->next;
 				delete head.pointer;
 				head = next.pointer;
 
@@ -74,9 +102,9 @@ public:
 	{
 		while (true)
 		{
-			pointer_t<T> head = b_head;
-			pointer_t<T> tail = b_tail;
-			pointer_t<T> next = head.pointer->next;
+			pointer_t_htm<T> head = b_head;
+			pointer_t_htm<T> tail = b_tail;
+			pointer_t_htm<T> next = head.pointer->next;
 
 			if (head == b_head)
 			{
@@ -93,12 +121,12 @@ public:
 					{
 						next = next.pointer->next;
 					}
-					htm_compare_and_swap<pointer_t<T>>(&b_tail, &tail, pointer_t<T>(next.pointer, false, tail.tag + 1));
+					htm_compare_and_swap<pointer_t_htm<T>>(&b_tail, &tail, pointer_t_htm<T>(next.pointer, false, tail.tag + 1));
 				}
 				else
 				{
 					int hops = 0;
-					pointer_t<T> iter = head;
+					pointer_t_htm<T> iter = head;
 					while ((b_head == head) && (next.deleted && iter.pointer != tail.pointer))
 					{
 						iter = next;
@@ -118,8 +146,8 @@ public:
 					else
 					{
 						T value = next.pointer->value;
-						if (htm_compare_and_swap<pointer_t<T>>(
-							&iter.pointer->next, &next, pointer_t<T>(next.pointer, true, tail.tag + 1)))
+						if (htm_compare_and_swap<pointer_t_htm<T>>(
+							&iter.pointer->next, &next, pointer_t_htm<T>(next.pointer, true, tail.tag + 1)))
 						{
 							if (hops >= MAX_HOPS)
 							{
@@ -141,19 +169,19 @@ public:
 
 		while (true)
 		{
-			pointer_t<T> tail = this->b_tail;
-			pointer_t<T> next = tail.pointer->next;
+			pointer_t_htm<T> tail = this->b_tail;
+			pointer_t_htm<T> next = tail.pointer->next;
 
 			if (tail == b_tail)
 			{
 				if (nullptr == next.pointer)
 				{
-					new_node->next = pointer_t<T>(nullptr, false, tail.tag + 2);
-					if (htm_compare_and_swap<pointer_t<T>>(
-						&tail.pointer->next, &next, pointer_t<T>(new_node, false, tail.tag + 1)))
+					new_node->next = pointer_t_htm<T>(nullptr, false, tail.tag + 2);
+					if (htm_compare_and_swap<pointer_t_htm<T>>(
+						&tail.pointer->next, &next, pointer_t_htm<T>(new_node, false, tail.tag + 1)))
 					{
-						htm_compare_and_swap<pointer_t<T>>(
-							&b_tail, &tail, pointer_t<T>(new_node, false, tail.tag + 1));
+						htm_compare_and_swap<pointer_t_htm<T>>(
+							&b_tail, &tail, pointer_t_htm<T>(new_node, false, tail.tag + 1));
 						return true;
 					}
 					next = tail.pointer->next;
@@ -161,8 +189,8 @@ public:
 					{
 						// backoff_scheme() 
 						new_node->next = next;
-						if (htm_compare_and_swap<pointer_t<T>>(
-							&tail.pointer->next, &next, pointer_t<T>(new_node, false, tail.tag + 1)))
+						if (htm_compare_and_swap<pointer_t_htm<T>>(
+							&tail.pointer->next, &next, pointer_t_htm<T>(new_node, false, tail.tag + 1)))
 						{
 							return true;
 						}
@@ -174,8 +202,8 @@ public:
 					while ((nullptr != next.pointer->next.pointer) && (tail == b_tail))
 						next = next.pointer->next;
 
-					htm_compare_and_swap<pointer_t<T>>(
-						&b_tail, &tail, pointer_t<T>(next.pointer, false, tail.tag + 1));
+					htm_compare_and_swap<pointer_t_htm<T>>(
+						&b_tail, &tail, pointer_t_htm<T>(next.pointer, false, tail.tag + 1));
 				}
 			}
 		}
@@ -183,6 +211,6 @@ public:
 
 
 private:
-	pointer_t<T> b_tail;
-	pointer_t<T> b_head;
+	pointer_t_htm<T> b_tail;
+	pointer_t_htm<T> b_head;
 };
