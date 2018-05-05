@@ -1,5 +1,6 @@
 #include <immintrin.h>
 #include <cstring>
+typedef unsigned int u_int;
 
 template <class T> 
 inline bool htm_compare_and_swap(T* obj, T* expected, T desired) {
