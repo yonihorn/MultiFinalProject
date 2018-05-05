@@ -6,6 +6,7 @@
 #include <atomic>
 
 
+
 template<typename T>
 class MSQueue {
 public:
@@ -13,8 +14,8 @@ public:
     class QueueNode;
     struct CountedPtr;
 
-    virtual void enqueue(T value) = 0;
-    virtual bool dequeue(T* outValue) = 0;
+    virtual void enqueue(T value, u_int tid) = 0;
+    virtual bool dequeue(T* outValue, u_int tid) = 0;
 };
 
 template<typename T>
@@ -40,13 +41,14 @@ public:
     };
 
 
-    HTM_CAS_MSQueue() {
+    HTM_CAS_MSQueue(u_int* failures_counters) {
         QueueNode* newNode = new QueueNode(); // create sentinel node
         m_head.ptr = newNode;
         m_tail.ptr = newNode;
+        m_failures_counters = failures_counters;
     }
 
-    virtual void enqueue(T value) override {
+    virtual void enqueue(T value, u_int tid) override {
         QueueNode* newNode = new QueueNode(value);
         CountedPtr newTail;
         newTail.ptr = newNode;
@@ -58,6 +60,8 @@ public:
                 if (next.ptr == nullptr) {
                     if (htm_compare_and_swap<CountedPtr>(&tail.ptr->next, &next, newTail)) {
                         break;
+                    } else {
+                        m_failures_counters[tid]++;
                     }
                 } else {
                     CountedPtr swingTail;
@@ -71,7 +75,7 @@ public:
         htm_compare_and_swap<CountedPtr>(&m_tail, &tail, swingTail);
     }
 
-    virtual bool dequeue(T* outValue) {
+    virtual bool dequeue(T* outValue, u_int tid) {
         while (true) {
             CountedPtr head = m_head;
             CountedPtr tail = m_tail;
@@ -97,6 +101,8 @@ public:
                     if (htm_compare_and_swap<CountedPtr>(&m_head, &head, newHead)) {
                         // great success
                         break;
+                    } else {
+                        m_failures_counters[tid]++;
                     }
                 }
             }
@@ -108,6 +114,7 @@ public:
 private:
     CountedPtr m_head;
     CountedPtr m_tail;
+    u_int* m_failures_counters;
 
 };
 
@@ -137,13 +144,14 @@ public:
     };
 
 
-    STD_CAS_MSQueue() {
+    STD_CAS_MSQueue(u_int* failures_counters) {
         QueueNode* newNode = new QueueNode(); // create sentinel node
         m_head.store(newNode);
         m_tail.store(newNode);
+        m_failures_counters = failures_counters;
     }
 
-    virtual void enqueue(T value) override {
+    virtual void enqueue(T value, u_int tid) override {
         QueueNode* newNode = new QueueNode(value);
         QueueNode* currentTail;
         while (true) {
@@ -154,6 +162,8 @@ public:
                 if (next == nullptr) {
                     if (std::atomic_compare_exchange_strong(&currentTail->next, &next, newNode)) {
                         break;
+                    } else {
+                        m_failures_counters[tid]++;
                     }
                 } else {
                     std::atomic_compare_exchange_strong(&m_tail, &currentTail, next);
@@ -163,7 +173,7 @@ public:
         std::atomic_compare_exchange_strong(&m_tail, &currentTail, newNode);
     }
 
-    virtual bool dequeue(T* outValue) {
+    virtual bool dequeue(T* outValue, u_int tid) {
         while (true) {
             QueueNode* currentHead = m_head.load();
             QueueNode* currentTail = m_tail.load();
@@ -185,6 +195,8 @@ public:
                     if (std::atomic_compare_exchange_strong(&m_head, &currentHead, next)) {
                         // great success
                         break;
+                    } else {
+                        m_failures_counters[tid]++;
                     }
                 }
             }
@@ -196,6 +208,7 @@ public:
 private:
     QueueNodeAtomicPtr m_head;
     QueueNodeAtomicPtr m_tail;
+    u_int* m_failures_counters;
 
 };
 
