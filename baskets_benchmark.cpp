@@ -17,7 +17,7 @@ class OperationsList {
     private:
     class Operation {
         public:
-        virtual bool performOperation(MSQueue<u_int>* queue);
+        virtual void performOperation(BasketsQueue<u_int>* queue);
     };
 
     class InsertionOperation {
@@ -25,17 +25,15 @@ class OperationsList {
         u_int m_value;
         public:
         InsertionOperation(u_int value) : m_value(value) {};
-        virtual bool performOperation(MSQueue<u_int>* queue) {
+        virtual void performOperation(BasketsQueue<u_int>* queue) {
             queue->enqueue(m_value);
-            return true;
         }
     };
 
     class DeletionOperation {
         public:
-        virtual bool performOperation(MSQueue<u_int>* queue) {
-            u_int outValue;
-            return queue->dequeue(&outValue);
+        virtual void performOperation(BasketsQueue<u_int>* queue) {
+            queue->dequeue();
         };
     };
 
@@ -63,24 +61,24 @@ class OperationsList {
         }
     };
 
-    bool operateNextOperation(MSQueue<u_int>* queue) {
-        return m_operations[m_operations.size() - operationsLeft--]->performOperation(queue);
+    void operateNextOperation(BasketsQueue<u_int>* queue) {
+        m_operations[m_operations.size() - operationsLeft--]->performOperation(queue);
     };
 
 };
 
 
-void queueOperationsWorker(MSQueue<u_int>* queue, OperationsList* opsList) {
+void queueOperationsWorker(BasketsQueue<u_int>* queue, OperationsList* opsList) {
     while(opsList->operationsLeft) {
         //std::cout << "operating" << std::endl;
         opsList->operateNextOperation(queue);
     }
 }
 
-bool run(int nthreads, int ntrials, int noperations, double ratio, bool prefill, bool HTM_CAS) {
-    std::vector<std::thread> threads;
-    std::vector<u_int> failures_counters(nthreads, 0);
+u_int run(int nthreads, int ntrials, int noperations, double ratio, bool prefill, bool HTM_CAS) {
+    u_int results_microseconds = 0;
     for (u_int j = 0; j<ntrials; j++) {
+        std::vector<std::thread> threads;
         BasketsQueue<u_int>* queue;
         if (HTM_CAS) {
             queue = reinterpret_cast<BasketsQueue<u_int>*>(new BasketsQueueHTM<u_int>());
@@ -91,21 +89,21 @@ bool run(int nthreads, int ntrials, int noperations, double ratio, bool prefill,
         for (u_int i = 0; i< nthreads; i++) {
             opsLists.push_back(new OperationsList(noperations, ratio));
         }
+        auto t1 = std::chrono::high_resolution_clock::now();
         for (u_int i = 0; i < nthreads; i++) {
-            threads.push_back(std::thread(queueOperationsWorker, queue, opsLists[i], i));
+            threads.push_back(std::thread(queueOperationsWorker, queue, opsLists[i]));
         }
+        // wait for all threads to finish
+        for (auto& t : threads)
+        {
+            t.join();
+        }
+        auto t2 = std::chrono::high_resolution_clock::now();
+        auto microseconds_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+        results_microseconds += microseconds_elapsed.count();
+        
     }
-    // wait for all threads to finish
-    for (auto& t : threads)
-    {
-        t.join();
-    }
-    u_int total_failures = 0;
-    for (u_int& f : failures_counters) {
-        std::cout << f << ", ";
-        total_failures += f;
-    }
-    std::cout << "total: " << total_failures << std::endl;
+    return results_microseconds / ntrials;
 };
 
 int main(int argc, char** argv) {
@@ -113,6 +111,7 @@ int main(int argc, char** argv) {
     int argsNumber = 4;
     if (argc < argsNumber) {
         std::cerr << "expected 4 paramerts" << std::endl;
+        std::cerr << "Usage: queue_benchmark <nthreads> <ntrials> <noperations> <ratio>" << std::endl;
         return -1;
     }
 
@@ -121,15 +120,12 @@ int main(int argc, char** argv) {
     u_int noperations = atoi(argv[3]);
     double ratio = atof(argv[4]);
 
-    auto t1 = std::chrono::high_resolution_clock::now();
-    run(nthreads, ntrials, noperations, ratio, true, false);
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto microseconds_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    std::cout << "std cas basket queue: " << microseconds_elapsed.count() << std::endl;
+    std::cout << "Running " << noperations << " operations on " << nthreads << " threads, " << ntrials << " trials " << " with ratio " << ratio << std::endl;
 
-    t1 = std::chrono::high_resolution_clock::now();
-    run(nthreads, ntrials, noperations, ratio, true, true);
-    t2 = std::chrono::high_resolution_clock::now();
-    microseconds_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    std::cout << "htm cas basket queue: " << microseconds_elapsed.count() << std::endl;
+    std::cout << "std cas: "  << run(nthreads, ntrials, noperations, ratio, true, false) << std::endl;;
+    
+    std::cout << "htm cas: "  << run(nthreads, ntrials, noperations, ratio, true, true) << std::endl;;
+
+
+    return 1;
 };
