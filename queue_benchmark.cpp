@@ -75,10 +75,12 @@ void queueOperationsWorker(MSQueue<u_int>* queue, OperationsList* opsList, u_int
     }
 }
 
-bool run(int nthreads, int ntrials, int noperations, double ratio, bool prefill, bool HTM_CAS) {
-    std::vector<std::thread> threads;
+u_int run(int nthreads, int ntrials, int noperations, double ratio, bool prefill, bool HTM_CAS) {
     std::vector<u_int> failures_counters(nthreads, 0);
+    u_int total_failures = 0;
+    u_int results_microseconds = 0;
     for (u_int j = 0; j<ntrials; j++) {
+        std::vector<std::thread> threads;
         MSQueue<u_int>* queue;
         if (HTM_CAS) {
             queue = reinterpret_cast<MSQueue<u_int>*>(new HTM_CAS_MSQueue<u_int>(failures_counters.data()));
@@ -89,21 +91,24 @@ bool run(int nthreads, int ntrials, int noperations, double ratio, bool prefill,
         for (u_int i = 0; i< nthreads; i++) {
             opsLists.push_back(new OperationsList(noperations, ratio));
         }
+        auto t1 = std::chrono::high_resolution_clock::now();
         for (u_int i = 0; i < nthreads; i++) {
             threads.push_back(std::thread(queueOperationsWorker, queue, opsLists[i], i));
         }
+        // wait for all threads to finish
+        for (auto& t : threads)
+        {
+            t.join();
+        }
+        auto t2 = std::chrono::high_resolution_clock::now();
+        auto microseconds_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+        results_microseconds += microseconds_elapsed.count();
+        for (u_int& f : failures_counters) {
+            total_failures += f;
+        }
     }
-    // wait for all threads to finish
-    for (auto& t : threads)
-    {
-        t.join();
-    }
-    u_int total_failures = 0;
-    for (u_int& f : failures_counters) {
-        std::cout << f << ", ";
-        total_failures += f;
-    }
-    std::cout << "total: " << total_failures << std::endl;
+    std::cout << "total failures: " << total_failures << std::endl;
+    return results_microseconds / ntrials;
 };
 
 int main(int argc, char** argv) {
@@ -111,6 +116,7 @@ int main(int argc, char** argv) {
     int argsNumber = 4;
     if (argc < argsNumber) {
         std::cerr << "expected 4 paramerts" << std::endl;
+        std::cerr << "Usage: queue_benchmark <nthreads> <ntrials> <noperations> <ratio>" << std::endl;
         return -1;
     }
 
@@ -119,15 +125,12 @@ int main(int argc, char** argv) {
     u_int noperations = atoi(argv[3]);
     double ratio = atof(argv[4]);
 
-    auto t1 = std::chrono::high_resolution_clock::now();
-    run(nthreads, ntrials, noperations, ratio, true, false);
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto microseconds_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    std::cout << "std cas: " << microseconds_elapsed.count() << std::endl;
+    std::cout << "Running " << noperations << " operations on " << nthreads << " threads, " << ntrials << " trials " << " with ratio " << ratio << std::endl;
 
-    t1 = std::chrono::high_resolution_clock::now();
-    run(nthreads, ntrials, noperations, ratio, true, true);
-    t2 = std::chrono::high_resolution_clock::now();
-    microseconds_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    std::cout << "htm cas: " << microseconds_elapsed.count() << std::endl;
+    std::cout << "std cas: "  << run(nthreads, ntrials, noperations, ratio, true, false) << std::endl;;
+    
+    std::cout << "htm cas: "  << run(nthreads, ntrials, noperations, ratio, true, true) << std::endl;;
+
+
+    return 1;
 };
