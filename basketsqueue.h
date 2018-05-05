@@ -4,8 +4,6 @@
 #include <iostream>
 #define MAX_HOPS (3)
 
-
-
 template <typename T>
 class BasketsQueue
 {
