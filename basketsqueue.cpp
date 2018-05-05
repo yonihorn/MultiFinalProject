@@ -3,6 +3,7 @@
 #include "basketsqueue_htm.h"
 #include <future>
 #include <iostream>
+#include <vector>
 
 #define NUMBER_OF_CAS_TYPES (2)
 #define VERIFY_ELSE_RETURN(expected, actual, variable_name) if (actual != expected) { std::cout << variable_name << " should be " << expected << " but instead equals to " << actual << std::endl; return 1; }

@@ -6,4 +6,4 @@ all:
 	g++ basketsqueue_std.h -mrtm -o basketsqueue_std.bin -std=c++11
 	g++ example.cpp -mrtm -o example.bin -std=c++11
 	g++ cas_compare.cpp -mrtm -o cas_compare.bin -pthread -std=c++11
-	g++ basketsqueue.cpp -mrtm -o basketsqueue.bin -pthread -std=c++11
+	g++ basketsqueue.cpp -mrtm -o basketsqueue.bin -pthread -latomic -std=c++11
