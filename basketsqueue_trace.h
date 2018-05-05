@@ -417,7 +417,7 @@ public:
 						}
 						else
 						{
-							m_failures_counters[tid]++
+							m_failures_counters[tid]++;
 						}
 
 						// backoff scheme
