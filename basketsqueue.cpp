@@ -5,7 +5,6 @@
 #include <iostream>
 #include <vector>
 
-#define NUMBER_OF_CAS_TYPES (2)
 #define VERIFY_ELSE_RETURN(expected, actual, variable_name) if (actual != expected) { std::cout << variable_name << " should be " << expected << " but instead equals to " << actual << std::endl; return 1; }
 
 void enqueue_callback(BasketsQueue<int>* queue, int number_of_enqueues)
@@ -256,7 +255,7 @@ int main()
 {
 	run_tests_for_std_cas();
 	run_tests_for_htm_cas();
-	std::cout << "all tests finished";
+	std::cout << "all tests finished" << std::endl;
 	return 0;
 
 }
