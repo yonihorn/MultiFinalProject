@@ -11,13 +11,13 @@ using namespace std;
 typedef unsigned int u_int;
 
 u_int htm_var = 1;
-u_int htm_different_var = 2;
-u_int htm_desired = 100;
+u_int htm_desired = 10;
 /*
 Call htm cas n times, knowing it is supposed to fail as the expected value is difference from out object.
 */
 bool call_htm_cas_n_times(u_int n)
 {
+    u_int htm_different_var = 5;
     for (u_int i = 0; i < n; i++)
     {
         // CAS should fail (as we compare two different values)
@@ -26,6 +26,8 @@ bool call_htm_cas_n_times(u_int n)
             std::cout << "cas succeed. But is should Fail! htm_var: " << htm_var << " htm_different: " << htm_different_var << std::endl;
             return false;
         }
+        // don't really need this line. but we want similar behaviour (to the STD cas)
+        htm_different_var = 5;
     }
     return true;
 }
@@ -47,6 +49,7 @@ bool call_std_cas_n_times(u_int n)
             std::cout << "cas succeed. But is should Fail! std_var: " << std_var << " std_different: " << std_different_var << std::endl;
             return false;
         }
+        // as the std CAS changes the expected
         std_different_var = 5;
     }
     return true;
@@ -79,7 +82,7 @@ int main(int argc, char* argv[])
     // number of command line parameters should be 3
     if (argc != 3)
     {
-        std::cerr << "expected 3 paramerts";
+        std::cerr << "expected 3 paramerts" << std::endl;
         return -1;
     }
 
