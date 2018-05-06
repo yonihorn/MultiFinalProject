@@ -20,7 +20,7 @@ bool call_htm_cas_n_times(u_int n)
 {
     for (u_int i = 0; i < n; i++)
     {
-        // CAS does not supposed to be success (as we compare two different values)
+        // CAS should fail (as we compare two different values)
         if (htm_compare_and_swap(&htm_var, &htm_different_var, htm_desired))
         {
             std::cout << "cas succeed. But is should Fail! htm_var: " << htm_var << " htm_different: " << htm_different_var << std::endl;
@@ -41,7 +41,7 @@ bool call_std_cas_n_times(u_int n)
     u_int std_different_var = 5;
     for (u_int i = 0; i < n; i++)
     {
-        // CAS does not supposed to be success (as we compare two different values)
+        // CAS should fail (as we compare two different values)
         if (std::atomic_compare_exchange_strong(&std_var, &std_different_var, std_desired))
         {
             std::cout << "cas succeed. But is should Fail! std_var: " << std_var << " std_different: " << std_different_var << std::endl;
@@ -58,14 +58,9 @@ Test the specific cas operation performance by running multiple threads that cal
 void test_cas_failure_performance(bool(*cas_function)(u_int), u_int threads_number, u_int cas_tries)
 {
     std::vector<std::thread> threads;
-    u_int n = cas_tries / threads_number;
     for (u_int i = 0; i < threads_number; i++)
     {
-        if (i == threads_number - 1)
-        {
-            n += cas_tries % threads_number;
-        }
-        threads.push_back(thread(cas_function, n));
+        threads.push_back(thread(cas_function, cas_tries));
     }
     // wait for all threads to finish
     for (auto& t : threads)
@@ -77,7 +72,7 @@ void test_cas_failure_performance(bool(*cas_function)(u_int), u_int threads_numb
 /*
 Command line arguments:
 * Number of threads
-* Number of cas to perform (total)
+* Number of cas to perform (per thread)
 */
 int main(int argc, char* argv[])
 {
@@ -89,9 +84,7 @@ int main(int argc, char* argv[])
     }
 
     u_int threads_number = atoi(argv[1]);
-    u_int cas_tries = atoi(argv[2]);
-
-    threads_number = min(threads_number, cas_tries);
+    u_int cas_tries = atoi(argv[2]); // per thread
 
     auto t1 = std::chrono::high_resolution_clock::now();
     test_cas_failure_performance(&call_htm_cas_n_times, threads_number, cas_tries);
