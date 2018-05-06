@@ -98,6 +98,7 @@ def _to_plot_normalized(results, x_axis, x_text, title):
 
 
 if __name__ == '__main__':
+
     plt.figure(1)
     to_plot(parse_file('changing_noperations.txt'), 'noperations')
     plt.figure(2)
@@ -119,4 +120,6 @@ if __name__ == '__main__':
     to_plot(parse_file('changing_ratio.txt'), 'ratio', True)
     plt.figure(10)
     to_plot(parse_file('changing_ratio_morethreads.txt'), 'ratio', True)
+
+
     plt.show()

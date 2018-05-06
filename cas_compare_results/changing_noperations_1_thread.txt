@@ -1,0 +1,24 @@
+noperations: 100
+nthreads: 1
+htm cas: 88
+std cas: 46
+noperations: 200
+nthreads: 1
+htm cas: 86
+std cas: 39
+noperations: 500
+nthreads: 1
+htm cas: 94
+std cas: 47
+noperations: 1000
+nthreads: 1
+htm cas: 111
+std cas: 48
+noperations: 5000
+nthreads: 1
+htm cas: 200
+std cas: 114
+noperations: 10000
+nthreads: 1
+htm cas: 348
+std cas: 234

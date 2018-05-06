@@ -89,7 +89,8 @@ int main(int argc, char* argv[])
     u_int threads_number = atoi(argv[1]); // nthreads
     u_int cas_tries = atoi(argv[2]); // noperations per thread
 
-    std::cout << "Running " << cas_tries << " operations (per thread) on " << threads_number << " threads" << std::endl;
+    std::cout << "noperations: " << cas_tries << std::endl;
+    std::cout << "nthreads: " << threads_number << std::endl;
 
     auto t1 = std::chrono::high_resolution_clock::now();
     test_cas_failure_performance(&call_htm_cas_n_times, threads_number, cas_tries);

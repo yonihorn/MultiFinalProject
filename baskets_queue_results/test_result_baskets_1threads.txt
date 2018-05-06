@@ -1,0 +1,36 @@
+Running 10 operations on 1 threads, 4 trials  with ratio 0.5
+total failures: 0
+std cas: 38
+total failures: 8
+htm cas: 29
+Running 100 operations on 1 threads, 4 trials  with ratio 0.5
+total failures: 0
+std cas: 51
+total failures: 12
+htm cas: 40
+Running 1000 operations on 1 threads, 4 trials  with ratio 0.5
+total failures: 0
+std cas: 166
+total failures: 8
+htm cas: 124
+Running 10000 operations on 1 threads, 4 trials  with ratio 0.5
+total failures: 0
+std cas: 1612
+total failures: 14
+htm cas: 1146
+Running 100000 operations on 1 threads, 4 trials  with ratio 0.5
+total failures: 0
+std cas: 15797
+total failures: 24
+htm cas: 11082
+Running 1000000 operations on 1 threads, 4 trials  with ratio 0.5
+total failures: 0
+std cas: 175651
+total failures: 24
+htm cas: 123860
+Running 10000000 operations on 1 threads, 4 trials  with ratio 0.5
+total failures: 0
+std cas: 2507604
+total failures: 256
+htm cas: 1765090
+

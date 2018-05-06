@@ -1,36 +1,36 @@
-htm cas: 1244
-std cas: 1164
-htm cas: 1175
-std cas: 1155
-htm cas: 1204
-std cas: 1102
-htm cas: 1183
-std cas: 2549
-htm cas: 1160
-std cas: 12473
-htm cas: 1340
-std cas: 24533
-htm cas: 2482
-std cas: 134170
-htm cas: 4195
-std cas: 238024
-htm cas: 17622
-std cas: 1283984
-htm cas: 1222
-std cas: 1140
-htm cas: 1136
-std cas: 1103
-htm cas: 1237
-std cas: 1060
-htm cas: 1244
-std cas: 2798
-htm cas: 1270
-std cas: 12736
-htm cas: 1266
-std cas: 24637
-htm cas: 2748
-std cas: 121190
-htm cas: 4125
-std cas: 259891
-htm cas: 17708
-std cas: 1260699
+noperations: 10
+nthreads: 25
+htm cas: 680
+std cas: 567
+noperations: 50
+nthreads: 25
+htm cas: 625
+std cas: 549
+noperations: 100
+nthreads: 25
+htm cas: 619
+std cas: 542
+noperations: 1000
+nthreads: 25
+htm cas: 654
+std cas: 1380
+noperations: 5000
+nthreads: 25
+htm cas: 657
+std cas: 6400
+noperations: 10000
+nthreads: 25
+htm cas: 763
+std cas: 13636
+noperations: 50000
+nthreads: 25
+htm cas: 1787
+std cas: 66479
+noperations: 100000
+nthreads: 25
+htm cas: 3187
+std cas: 133184
+noperations: 500000
+nthreads: 25
+htm cas: 13901
+std cas: 689475

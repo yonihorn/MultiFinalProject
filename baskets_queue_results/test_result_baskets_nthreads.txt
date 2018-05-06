@@ -1,0 +1,35 @@
+Running 10000 operations on 2 threads, 2 trials  with ratio 0.5
+total failures: 6542
+std cas: 10335
+total failures: 870101
+htm cas: 72538
+Running 10000 operations on 4 threads, 2 trials  with ratio 0.5
+total failures: 43857
+std cas: 27190
+total failures: 3541082
+htm cas: 268732
+Running 10000 operations on 8 threads, 2 trials  with ratio 0.5
+total failures: 139527
+std cas: 67278
+total failures: 17527265
+htm cas: 1190147
+Running 10000 operations on 10 threads, 2 trials  with ratio 0.5
+total failures: 217891
+std cas: 101027
+total failures: 12245664
+htm cas: 678937
+Running 10000 operations on 12 threads, 2 trials  with ratio 0.5
+total failures: 294543
+std cas: 131348
+total failures: 21035651
+htm cas: 1281480
+Running 10000 operations on 14 threads, 2 trials  with ratio 0.5
+total failures: 385245
+std cas: 154466
+total failures: 24461801
+htm cas: 1130539
+Running 10000 operations on 16 threads, 2 trials  with ratio 0.5
+total failures: 448093
+std cas: 160032
+total failures: 56865809
+htm cas: 2463102
