@@ -77,7 +77,7 @@ void test_cas_failure_performance(bool(*cas_function)(u_int), u_int threads_numb
 /*
 Command line arguments:
 * Number of threads
-* Number of cas to perform in each thread
+* Number of cas to perform (total)
 */
 int main(int argc, char* argv[])
 {
