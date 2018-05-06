@@ -13,7 +13,7 @@ typedef unsigned int u_int;
 u_int htm_var = 1;
 u_int htm_desired = 10;
 /*
-Call htm cas n times, knowing it is supposed to fail as the expected value is difference from out object.
+Call htm cas n times, knowing it is supposed to fail as the expected value is different from out object.
 */
 bool call_htm_cas_n_times(u_int n)
 {
@@ -33,7 +33,7 @@ bool call_htm_cas_n_times(u_int n)
 }
 
 /*
-Call std cas n times, knowing it is supposed to fail as the expected value is difference from out object.
+Call std cas n times, knowing it is supposed to fail as the expected value is different from out object.
 */
 
 std::atomic<u_int> std_var(1);
@@ -49,7 +49,7 @@ bool call_std_cas_n_times(u_int n)
             std::cout << "cas succeed. But is should Fail! std_var: " << std_var << " std_different: " << std_different_var << std::endl;
             return false;
         }
-        // as the std CAS changes the expected
+        // as the std CAS changes the expected anyway. 
         std_different_var = 5;
     }
     return true;
@@ -82,12 +82,14 @@ int main(int argc, char* argv[])
     // number of command line parameters should be 3
     if (argc != 3)
     {
-        std::cerr << "expected 3 paramerts" << std::endl;
+        std::cerr << "Usage: cas_compare.bin nthreads noperations" << std::endl;
         return -1;
     }
 
-    u_int threads_number = atoi(argv[1]);
-    u_int cas_tries = atoi(argv[2]); // per thread
+    u_int threads_number = atoi(argv[1]); // nthreads
+    u_int cas_tries = atoi(argv[2]); // noperations per thread
+
+    std::cout << "Running " << cas_tries << " operations (per thread) on " << threads_number << " threads" << std::endl;
 
     auto t1 = std::chrono::high_resolution_clock::now();
     test_cas_failure_performance(&call_htm_cas_n_times, threads_number, cas_tries);
