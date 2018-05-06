@@ -51,15 +51,15 @@ def normalize_to_falires(results):
             result['htm_cas_result_normalized'] = int(result['htm_cas_result'])
 
 
-def to_plot(results, changing_param_name, with_log_y=False):
+def to_plot(results, changing_param_name, with_log_y=False, with_log_x = False, cas_failures=False):
     constant_params = [p for p in PARAMS if p != changing_param_name]
     title = "By {}, ".format(changing_param_name)
     for p in constant_params:
         title += "{} = {} ".format(p, results[0][p]) 
     x_axis = [float(r[changing_param_name]) for r in results]
-    _to_plot(results, x_axis, changing_param_name, title, with_log_y)
+    _to_plot(results, x_axis, changing_param_name, title, with_log_y, with_log_x, cas_failures)
 
-def _to_plot(results, x_axis, x_text, title, with_log_y):
+def _to_plot(results, x_axis, x_text, title, with_log_y, with_log_x, cas_failures):
     htm_result = [float(r['htm_cas_result']) for r in results]
     htm_failures = [float(r['htm_cas_total_failures']) for r in results]
     std_result = [float(r['std_cas_result']) for r in results]
@@ -71,19 +71,29 @@ def _to_plot(results, x_axis, x_text, title, with_log_y):
     plt.legend(handles=[green_patch, blue_patch])
     plt.title(title)
     y_text = 'Microseconds to complete'
-    if with_log_y:
-        y_text = "log(" + y_text +  ")"
-        htm_failures = [math.log(y) for y in htm_failures]
-        std_failures = [math.log(y) for y in std_failures]
-    plt.ylabel(y_text)
-    plt.xlabel(x_text)
-    # plt.plot(x_axis, htm_result, 'g-o', x_axis, std_result, 'b-o')
-    plt.subplot(211)
-    plt.legend(handles=[green_patch, blue_patch])
-    plt.title(title)
-    plt.xlabel(x_text)
-    plt.ylabel('Number of CAS failures')
-    plt.plot(x_axis, htm_failures, 'g-o', x_axis, std_failures, 'b-o')
+    if with_log_x:
+        x_text = "log(" + x_text +  ")"
+        x_axis = [math.log(x) for x in x_axis]
+    if not cas_failures:
+        if with_log_y:
+            y_text = "log(" + y_text +  ")"
+            htm_result = [math.log(y) for y in htm_result]
+            std_result = [math.log(y) for y in std_result]
+        plt.ylabel(y_text)
+        plt.xlabel(x_text)
+        plt.plot(x_axis, htm_result, 'g-o', x_axis, std_result, 'b-o')
+    else:
+        y_text = 'Number of CAS failures'
+        if with_log_y:
+            y_text = "log(" + y_text +  ")"
+            htm_failures = [math.log(y) for y in htm_failures]
+            std_failures = [math.log(y) for y in std_failures]
+        plt.subplot(211)
+        plt.legend(handles=[green_patch, blue_patch])
+        plt.title(title)
+        plt.xlabel(x_text)
+        plt.ylabel(y_text)
+        plt.plot(x_axis, htm_failures, 'g-o', x_axis, std_failures, 'b-o')
 
 def _to_plot_normalized(results, x_axis, x_text, title):
     normalize_to_falires(results)
@@ -102,13 +112,13 @@ def _to_plot_normalized(results, x_axis, x_text, title):
 if __name__ == '__main__':
 
 
-    # plt.figure(1)
-    # to_plot(parse_file('test_result_baskets_1threads.txt'), 'noperations', True)
-
-    # plt.figure(2)
-    # to_plot(parse_file('test_result_baskets_1threads.txt'), 'noperations')
+    plt.figure(2)
+    to_plot(parse_file('test_result_baskets_1threads.txt'), 'noperations', True, True, False)
 
     plt.figure(3)
-    to_plot(parse_file('test_result_baskets_nthreads.txt'), 'nthreads', True)
+    to_plot(parse_file('test_result_baskets_nthreads.txt'), 'nthreads', True, False, False)
+
+    plt.figure(4)
+    to_plot(parse_file('test_result_baskets_nthreads.txt'), 'nthreads', True, False, True)
     
     plt.show()
